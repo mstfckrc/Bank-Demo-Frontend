@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// 🚀 Ortak Bileşenlerimiz ve Hook'umuz
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useAccounts } from "@/hooks/useAccounts"; 
@@ -21,10 +20,8 @@ import { AdminTransactionHistoryModal } from "@/components/admin/modals/AdminTra
 import { CloseAccountModal } from "@/components/admin/modals/CloseAccountModal";
 
 export default function AllAccountsPage() {
-  // 🚀 TÜM API VE DATA MANTIĞI BURADAN GELİYOR
   const { accounts, loading, isProcessing, fetchAccounts, closeAccount } = useAccounts();
 
-  // 🚀 Sadece UI (Modal) için gereken basit state'ler
   const [accountToClose, setAccountToClose] = useState<string | null>(null);
   const [historyAccountNo, setHistoryAccountNo] = useState<string | null>(null);
   const [historyAccountId, setHistoryAccountId] = useState<number | null>(null);
@@ -33,7 +30,7 @@ export default function AllAccountsPage() {
   const confirmCloseAccount = async () => {
     if (!accountToClose) return;
     const success = await closeAccount(accountToClose);
-    if (success) setAccountToClose(null); // İşlem başarılıysa modalı kapat
+    if (success) setAccountToClose(null); 
   };
 
   return (
@@ -58,7 +55,7 @@ export default function AllAccountsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-bold">Müşteri</TableHead>
+                  <TableHead className="font-bold">Müşteri / Kurum</TableHead>
                   <TableHead className="font-bold">Hesap Numarası</TableHead>
                   <TableHead className="font-bold">IBAN</TableHead>
                   <TableHead className="text-right font-bold">Bakiye</TableHead>
@@ -84,8 +81,9 @@ export default function AllAccountsPage() {
                         className={`transition-colors ${isAccountActive ? "hover:bg-slate-50" : "bg-slate-50/50 opacity-60"}`}
                       >
                         <TableCell>
-                          <div className="font-bold text-slate-900">{acc.customerName || "Bilinmiyor"}</div>
-                          <div className="text-[11px] text-slate-500 font-mono mt-0.5">TC: {acc.customerTcNo || "-"}</div>
+                          {/* 🚀 V2: ownerName ve identityNumber kullanıyoruz */}
+                          <div className="font-bold text-slate-900">{acc.ownerName || "Bilinmiyor"}</div>
+                          <div className="text-[11px] text-slate-500 font-mono mt-0.5">ID: {acc.identityNumber || "-"}</div>
                         </TableCell>
 
                         <TableCell className={`font-mono font-medium ${!isAccountActive ? "line-through text-slate-400" : ""}`}>
@@ -109,8 +107,7 @@ export default function AllAccountsPage() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             <Button
-                              variant="ghost"
-                              size="icon"
+                              variant="ghost" size="icon"
                               onClick={() => {
                                 setHistoryAccountNo(acc.accountNumber);
                                 setHistoryAccountId(acc.id);
@@ -124,8 +121,7 @@ export default function AllAccountsPage() {
 
                             {isAccountActive && (
                               <Button
-                                variant="ghost"
-                                size="icon"
+                                variant="ghost" size="icon"
                                 onClick={() => setAccountToClose(acc.accountNumber)}
                                 className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                                 title="Hesabı Kapat (Admin)"
@@ -145,7 +141,6 @@ export default function AllAccountsPage() {
         </CardContent>
       </Card>
 
-      {/* MODALLAR */}
       <AdminTransactionHistoryModal
         isOpen={isHistoryOpen}
         onOpenChange={setIsHistoryOpen}

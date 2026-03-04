@@ -10,32 +10,31 @@ export function useSettings(isAdmin: boolean = false) {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPass, setLoadingPass] = useState(false);
 
-  const [profileForm, setProfileForm] = useState({ fullName: "", email: "" });
+  // 🚀 V2: fullName yerine profileName kullanıyoruz
+  const [profileForm, setProfileForm] = useState({ profileName: "", email: "" });
   const [passForm, setPassForm] = useState({ oldPassword: "", newPassword: "" });
 
-  // Kullanıcı bilgisi store'dan geldiğinde formu doldur
   useEffect(() => {
     if (user) {
       setProfileForm({
-        fullName: user.fullName || "",
+        profileName: user.profileName || "",
         email: user.email || "",
       });
     }
   }, [user]);
 
   const handleUpdateProfile = async () => {
-    if (!user?.tcNo) return;
+    if (!user?.identityNumber) return; // 🚀 V2: tcNo kontrolü yerine identityNumber
     try {
       setLoadingProfile(true);
       
-      // 🚀 ZEKİ KISIM: Adminse admin servisine, değilse müşteri servisine git!
       const updatedData = isAdmin 
-        ? await adminService.updateCustomer(user.tcNo, profileForm)
+        ? await adminService.updateCustomer(user.identityNumber, profileForm)
         : await customerService.updateProfile(profileForm);
       
       // Store'u güncelle
       updateUser({
-        fullName: updatedData.fullName,
+        profileName: updatedData.profileName,
         email: updatedData.email
       });
       
@@ -48,9 +47,9 @@ export function useSettings(isAdmin: boolean = false) {
   const handleChangePassword = async () => {
     try {
       setLoadingPass(true);
-      await customerService.changePassword(passForm); // Şifre servisi ikisinde de aynı
+      await customerService.changePassword(passForm);
       toast.success("Şifreniz başarıyla değiştirildi.");
-      setPassForm({ oldPassword: "", newPassword: "" }); // Formu temizle
+      setPassForm({ oldPassword: "", newPassword: "" }); 
     } finally {
       setLoadingPass(false);
     }

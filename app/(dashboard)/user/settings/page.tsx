@@ -9,7 +9,6 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { useSettings } from "@/hooks/useSettings";
 
 export default function UserSettingsPage() {
-  // 🚀 false gönderiyoruz (veya boş bırakıyoruz) çünkü burası Müşteri!
   const { user, profileForm, setProfileForm, passForm, setPassForm, loadingProfile, loadingPass, handleUpdateProfile, handleChangePassword } = useSettings(false);
 
   return (
@@ -24,12 +23,15 @@ export default function UserSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-slate-500 text-xs uppercase tracking-wider">TC Kimlik Numarası</Label>
-              <Input value={user?.tcNo || ""} disabled className="bg-slate-50 text-slate-500 font-mono" />
+              {/* 🚀 V2: Etiketi TC veya Vergi No'yu kapsayacak şekilde güncelledik */}
+              <Label className="text-slate-500 text-xs uppercase tracking-wider">Kimlik / Vergi Numarası</Label>
+              {/* 🚀 V2: tcNo yerine identityNumber */}
+              <Input value={user?.identityNumber || ""} disabled className="bg-slate-50 text-slate-500 font-mono" />
             </div>
             <div className="space-y-2">
-              <Label>Ad Soyad</Label>
-              <Input value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} disabled={loadingProfile} />
+              <Label>Ad Soyad / Şirket Ünvanı</Label>
+              {/* 🚀 V2: fullName yerine profileName */}
+              <Input value={profileForm.profileName} onChange={(e) => setProfileForm({...profileForm, profileName: e.target.value})} disabled={loadingProfile} />
             </div>
             <div className="space-y-2">
               <Label>E-posta</Label>
@@ -42,6 +44,7 @@ export default function UserSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Güvenlik/Şifre kartı kodları aynı, dokunmadım */}
         <Card className="border-none shadow-lg bg-white overflow-hidden">
           <CardHeader className="flex flex-row items-center gap-2 bg-slate-50/50 border-b mb-4">
             <Lock className="w-5 h-5 text-orange-600" />

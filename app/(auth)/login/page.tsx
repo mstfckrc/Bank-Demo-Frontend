@@ -1,136 +1,126 @@
-// app/(auth)/login/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authService } from "@/services/auth.service";
-import { customerService } from "@/services/customer.service"; // Yeni servisimizi import ettik
+import { customerService } from "@/services/customer.service";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const login = useAuthStore((state) => state.login);
-
-  const [tcNo, setTcNo] = useState("");
+  const { login } = useAuthStore();
+  
+  // 🚀 V2: tcNo yerine identityNumber
+  const [identityNumber, setIdentityNumber] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
+    setLoading(true);
 
     try {
-      // 1. Sadece Token'ı alıyoruz
-      const response = await authService.login({ tcNo, password });
-      const token = response.token;
-
-      // 2. Middleware ve diğer istekler için Token'ı Cookie'ye yazıyoruz
-      document.cookie = `token=${token}; path=/; max-age=86400; secure; samesite=strict`;
-
-      // 3. 🚀 GERÇEK BİLGİLERİ YENİ ENDPOINT'TEN ÇEKİYORUZ
-      // Artık token parçalamak yok, veritabanındaki en güncel halini alıyoruz
+      // 🚀 V2: Servise identityNumber gönderiyoruz
+      const { token } = await authService.login({ identityNumber, password });
+      
       const userProfile = await customerService.getProfile(token);
-
-      // Esnek Rol Kontrolü: ROLE_ADMIN -> ADMIN
-      const rawRole = userProfile.role || "USER";
-      const cleanRole = String(rawRole).includes("ADMIN") ? "ADMIN" : "USER";
-
-      // 4. Zustand Store Güncelleme
-      login(
-        {
-          tcNo: userProfile.tcNo,
-          fullName: userProfile.fullName,
-          email: userProfile.email,
-          role: cleanRole,
-          status: userProfile.status,
-        },
-        token
-      );
-
-      // 5. Yönlendirme
-      if (cleanRole === "ADMIN") {
+      
+      login(userProfile, token);
+      
+      // Admin ise admin paneline, değilse müşteri (Bireysel/Kurumsal) paneline
+      if (userProfile.role.includes("ADMIN")) {
         router.push("/admin/dashboard");
       } else {
         router.push("/user/dashboard");
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Giriş başarısız. Lütfen bilgilerinizi kontrol edin."
-      );
+      setError(err.response?.data?.message || "Giriş başarısız. Bilgilerinizi kontrol edin.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-lg border-none">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Giriş Yap</CardTitle>
-          <CardDescription>Sec-Demo Bank Yönetim Paneli</CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <Card className="w-full max-w-md border-none shadow-2xl">
+        <CardHeader className="space-y-3 pb-6 border-b border-slate-100 bg-white rounded-t-xl">
+          <div className="flex justify-center mb-2">
+            <div className="p-3 bg-blue-50 rounded-full">
+              <ShieldCheck className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-black text-center text-slate-900">Sec-Demo Bank</CardTitle>
+          <CardDescription className="text-center font-medium">
+            Bireysel ve Kurumsal Dijital Şubeye Giriş
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+        
+        <CardContent className="pt-6 bg-white">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-3 text-red-600 text-sm font-medium animate-in fade-in zoom-in duration-300">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+            
             <div className="space-y-2">
-              <Label htmlFor="tcNo">TC Kimlik Numarası</Label>
+              {/* 🚀 V2: Etiket güncellendi */}
+              <Label htmlFor="identityNumber" className="text-slate-700 font-bold">TC Kimlik / Vergi Numarası</Label>
               <Input
-                id="tcNo"
+                id="identityNumber"
                 type="text"
-                inputMode="numeric"
-                placeholder="11 haneli TC No"
-                value={tcNo}
-                onChange={(e) => setTcNo(e.target.value.replace(/[^0-9]/g, ""))}
-                maxLength={11}
+                placeholder="11 Haneli TC veya 10 Haneli Vergi No"
+                value={identityNumber}
+                onChange={(e) => setIdentityNumber(e.target.value)}
                 required
+                disabled={loading}
+                className="h-12 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 font-mono text-lg transition-colors"
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="password">Şifre</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-slate-700 font-bold">Dijital Şifre</Label>
+              </div>
               <Input
                 id="password"
                 type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
+                className="h-12 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 font-mono text-lg transition-colors"
               />
             </div>
-            {error && (
-              <div className="text-sm text-red-500 bg-red-50 p-3 rounded font-medium">
-                {error}
-              </div>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Bağlanıyor..." : "Giriş Yap"}
+            
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+              {loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
             </Button>
           </form>
-
-          {/* 🚀 EKLENEN KAYIT OL YÖNLENDİRMESİ */}
-          <div className="mt-6 text-center text-sm text-slate-500">
-            Hesabınız yok mu?{" "}
-            <Link href="/register" className="text-blue-600 font-bold hover:underline">
-              Hemen Kayıt Ol
-            </Link>
-          </div>
-
         </CardContent>
-        <CardFooter className="justify-center border-t p-4 mt-2 bg-slate-50/50 rounded-b-xl">
-          <Link href="/" className="text-sm text-slate-500 hover:text-slate-800 transition-colors">
-            ← Ana Sayfaya Dön
-          </Link>
+        
+        <CardFooter className="flex justify-center bg-slate-50/50 rounded-b-xl py-6 border-t border-slate-100">
+          <p className="text-sm text-slate-500 font-medium">
+            Müşterimiz değil misiniz?{" "}
+            <Link href="/register" className="text-blue-600 font-bold hover:underline underline-offset-4">
+              Hemen Kayıt Olun
+            </Link>
+          </p>
         </CardFooter>
       </Card>
     </div>

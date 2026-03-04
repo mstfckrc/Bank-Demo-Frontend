@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-// 🚀 GÜNCELLEME: customerService importunu sildik, sadece adminService kaldı
 import { adminService } from "@/services/admin.service";
-import { CustomerResponse } from "@/types";
+import { UserProfileResponse } from "@/types"; // 🚀 V2: CustomerResponse yerine UserProfileResponse
 import { toast } from "sonner";
 
 export function useCustomers() {
-  const [customers, setCustomers] = useState<CustomerResponse[]>([]);
+  const [customers, setCustomers] = useState<UserProfileResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -13,9 +12,16 @@ export function useCustomers() {
   }, []);
 
   const fetchCustomers = async () => {
-    try {
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Fetches all customers from the server.
+ * If successful, sets the customers state to the received data.
+ * If not successful, shows a toast error message.
+ * Finally, sets the loading state to false.
+ * @returns {Promise<void>} A promise that resolves when the operation is complete.
+ */
+/*******  4a70a9e6-43a7-4ed9-a02c-9795dd684ebe  *******/    try {
       setLoading(true);
-      // 🚀 GÜNCELLEME: customerService yerine adminService kullanıyoruz
       const data = await adminService.getAllCustomers();
       setCustomers(data);
     } finally {
@@ -23,34 +29,26 @@ export function useCustomers() {
     }
   };
 
-  const removeCustomer = async (tcNo: string) => {
-    // Interceptor sayesinde try-catch'e gerek yok
-    // 🚀 GÜNCELLEME: customerService yerine adminService kullanıyoruz
-    await adminService.deleteCustomer(tcNo);
-    setCustomers((prev) => prev.filter((c) => c.tcNo !== tcNo));
-    toast.success("Müşteri başarıyla silindi.");
+  const removeCustomer = async (identityNumber: string) => {
+    await adminService.deleteCustomer(identityNumber);
+    // 🚀 V2: Filtreleme identityNumber üzerinden
+    setCustomers((prev) => prev.filter((c) => c.identityNumber !== identityNumber));
+    toast.success("Müşteri/Kurum başarıyla silindi.");
   };
 
-  const editCustomer = async (tcNo: string, updatedData: { fullName: string; email: string }) => {
-    // Backend'e at, dönerse state'i güncelle
-    const updatedCustomer = await adminService.updateCustomer(tcNo, updatedData);
-    toast.success("Müşteri bilgileri başarıyla güncellendi!");
-    setCustomers((prev) => prev.map((c) => (c.tcNo === tcNo ? { ...c, ...updatedCustomer } : c)));
-    return true; // Modal'ın kapanması için UI'a "başarılı" sinyali dönüyoruz
+  // 🚀 V2: fullName yerine profileName
+  const editCustomer = async (identityNumber: string, updatedData: { profileName: string; email: string }) => {
+    const updatedCustomer = await adminService.updateCustomer(identityNumber, updatedData);
+    toast.success("Bilgiler başarıyla güncellendi!");
+    setCustomers((prev) => prev.map((c) => (c.identityNumber === identityNumber ? { ...c, ...updatedCustomer } : c)));
+    return true; 
   };
 
-  // Müşteri Onay/Red İşlemi (Burası zaten adminService kullanıyordu, kusursuz)
-  const updateCustomerStatus = async (tcNo: string, status: 'APPROVED' | 'REJECTED') => {
+  const updateCustomerStatus = async (identityNumber: string, status: 'APPROVED' | 'REJECTED') => {
     try {
-      // 1. Servise isteği at
-      await adminService.updateCustomerStatus(tcNo, status);
-      
-      // 2. Başarılı mesajı göster
-      toast.success(`Müşteri başarıyla ${status === 'APPROVED' ? 'onaylandı' : 'reddedildi'}.`);
-      
-      // 3. Tablodaki verilerin güncel halini tekrar çek (Sayfayı yenilemeye gerek kalmadan)
+      await adminService.updateCustomerStatus(identityNumber, status);
+      toast.success(`Durum başarıyla ${status === 'APPROVED' ? 'onaylandı' : 'reddedildi'}.`);
       await fetchCustomers();
-      
       return true;
     } catch (error: any) {
       toast.error("İşlem gerçekleştirilemedi!", { 

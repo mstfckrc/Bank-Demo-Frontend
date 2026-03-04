@@ -1,51 +1,46 @@
-import { TransactionResponse, CustomerResponse, AccountResponse } from "@/types";
+import { TransactionResponse, UserProfileResponse, AccountResponse, UpdateProfileRequest } from "../types";
 import api from "../lib/axios";
-
-export interface UpdateProfileRequest {
-  fullName: string;
-  email: string;
-}
 
 export const adminService = {
   // --- MÜŞTERİ YÖNETİMİ ---
 
   // Tüm müşterileri listele
-  getAllCustomers: async (): Promise<CustomerResponse[]> => {
-    const response = await api.get<CustomerResponse[]>('/admin/customers');
+  getAllCustomers: async (): Promise<UserProfileResponse[]> => {
+    const response = await api.get<UserProfileResponse[]>('/admin/customers');
     return response.data;
   },
 
   // Müşteri bilgilerini güncelle
-  updateCustomer: async (tcNo: string, data: UpdateProfileRequest) => {
-    const response = await api.put(`/admin/customers/${tcNo}`, data);
-    return response.data; // Backend'den dönen güncel CustomerResponse
+  updateCustomer: async (identityNumber: string, data: UpdateProfileRequest) => {
+    const response = await api.put(`/admin/customers/${identityNumber}`, data);
+    return response.data; 
   },
 
   // Müşteri Onay/Red Durum Güncelleme
-  updateCustomerStatus: async (tcNo: string, status: 'APPROVED' | 'REJECTED' | 'PENDING') => {
-    const response = await api.put(`/admin/customers/${tcNo}/status`, null, {
+  updateCustomerStatus: async (identityNumber: string, status: 'APPROVED' | 'REJECTED' | 'PENDING') => {
+    const response = await api.put(`/admin/customers/${identityNumber}/status`, null, {
       params: { status }
     });
     return response.data;
   },
 
   // Müşteriyi sil
-  deleteCustomer: async (tcNo: string): Promise<void> => {
-    await api.delete(`/admin/customers/${tcNo}`);
+  deleteCustomer: async (identityNumber: string): Promise<void> => {
+    await api.delete(`/admin/customers/${identityNumber}`);
   },
 
 
   // --- HESAP YÖNETİMİ ---
 
   // Müşteriye ait tüm hesapları getirme
-  getCustomerAccounts: async (tcNo: string): Promise<AccountResponse[]> => {
-    const response = await api.get<AccountResponse[]>(`/admin/customers/${tcNo}/accounts`);
+  getCustomerAccounts: async (identityNumber: string): Promise<AccountResponse[]> => {
+    const response = await api.get<AccountResponse[]>(`/admin/customers/${identityNumber}/accounts`);
     return response.data;
   },
 
   // Admin yetkisiyle müşteriye yeni hesap açma
-  openAccountForCustomer: async (tcNo: string, currency: string) => {
-    const response = await api.post(`/admin/customers/${tcNo}/accounts`, { currency });
+  openAccountForCustomer: async (identityNumber: string, currency: string) => {
+    const response = await api.post(`/admin/customers/${identityNumber}/accounts`, { currency });
     return response.data;
   },
 

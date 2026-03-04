@@ -4,21 +4,21 @@ import { adminService } from "@/services/admin.service";
 import { AccountResponse } from "@/types";
 import { toast } from "sonner";
 
-// tcNo parametresi opsiyoneldir. Verirsek sadece o müşterinin, vermezsek tüm sistemin hesaplarını çeker.
-export function useAccounts(tcNo?: string) {
+// 🚀 V2: tcNo yerine identityNumber bekliyoruz
+export function useAccounts(identityNumber?: string) {
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
-  }, [tcNo]);
+  }, [identityNumber]);
 
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const data = tcNo 
-        ? await adminService.getCustomerAccounts(tcNo) 
+      const data = identityNumber 
+        ? await adminService.getCustomerAccounts(identityNumber) 
         : await accountService.getAllAccounts();
       setAccounts(data);
     } finally {
@@ -32,10 +32,9 @@ export function useAccounts(tcNo?: string) {
       await accountService.deleteAccount(accountNumber);
       toast.success("İşlem Başarılı", { description: `${accountNumber} numaralı hesap kapatıldı.` });
       
-      // Tabloyu anında güncelle
       setAccounts((prev) =>
         prev.map((acc) =>
-          acc.accountNumber === accountNumber ? { ...acc, isActive: false, active: false } : acc
+          acc.accountNumber === accountNumber ? { ...acc, isActive: false } : acc
         )
       );
       return true; 
@@ -44,10 +43,11 @@ export function useAccounts(tcNo?: string) {
     }
   };
 
-  const openAccount = async (customerTcNo: string, currency: string) => {
+  // 🚀 V2: Müşterinin identityNumber bilgisini yolluyoruz
+  const openAccount = async (customerIdentityNumber: string, currency: string) => {
     try {
       setIsProcessing(true);
-      const newAccount = await adminService.openAccountForCustomer(customerTcNo, currency);
+      const newAccount = await adminService.openAccountForCustomer(customerIdentityNumber, currency);
       toast.success("Hesap Başarıyla Açıldı", { description: `${newAccount.iban} numaralı ${newAccount.currency} hesabı oluşturuldu.` });
       setAccounts((prev) => [...prev, newAccount]);
       return true;

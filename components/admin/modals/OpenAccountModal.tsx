@@ -10,26 +10,28 @@ import { toast } from "sonner";
 interface OpenAccountModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  tcNo: string;
+  // 🚀 V2: tcNo yerine identityNumber
+  identityNumber: string;
   onSuccess: (newAccount: any) => void;
 }
 
-export function OpenAccountModal({ isOpen, onOpenChange, tcNo, onSuccess }: OpenAccountModalProps) {
+export function OpenAccountModal({ isOpen, onOpenChange, identityNumber, onSuccess }: OpenAccountModalProps) {
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState("TRY");
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const newAccount = await adminService.openAccountForCustomer(tcNo, currency);
+      // 🚀 V2: Servis artık identityNumber bekliyor
+      const newAccount = await adminService.openAccountForCustomer(identityNumber, currency);
       
       toast.success("Hesap Başarıyla Açıldı", {
         description: `${newAccount.iban} numaralı ${newAccount.currency} hesabı oluşturuldu.`
       });
       
-      onSuccess(newAccount); // 🚀 Tabloyu anında güncellemek için yeni hesabı sayfaya yolluyoruz
+      onSuccess(newAccount); 
       onOpenChange(false);
-      setCurrency("TRY"); // Modalı sıfırla
+      setCurrency("TRY"); 
     } catch (error: any) {
       const backendMessage = error.response?.data?.message || "Hesap açılamadı.";
       toast.error("İşlem Başarısız", { description: backendMessage });
@@ -47,7 +49,8 @@ export function OpenAccountModal({ isOpen, onOpenChange, tcNo, onSuccess }: Open
             Yeni Hesap Açılışı
           </DialogTitle>
           <DialogDescription>
-            <strong>{tcNo}</strong> TCKN'li müşteri için yeni bir banka hesabı oluşturuyorsunuz.
+            {/* 🚀 V2: identityNumber gösterimi */}
+            <strong>{identityNumber}</strong> kimlik/vergi numaralı müşteri için yeni bir banka hesabı oluşturuyorsunuz.
           </DialogDescription>
         </DialogHeader>
 

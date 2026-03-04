@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
-import { CustomerResponse } from "@/types";
+import { UserProfileResponse } from "@/types"; // 🚀 V2: CustomerResponse yerine UserProfileResponse
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,17 +18,18 @@ export default function CustomerListPage() {
   const { user } = useAuthStore();
   const { customers, loading, fetchCustomers, removeCustomer, editCustomer, updateCustomerStatus } = useCustomers();
 
-  const [editingCustomer, setEditingCustomer] = useState<CustomerResponse | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<UserProfileResponse | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const handleDelete = async (tcNo: string) => {
-    if (confirm("Bu müşteriyi silmek istediğinize emin misiniz?")) {
-      await removeCustomer(tcNo);
+  // 🚀 V2: tcNo yerine identityNumber
+  const handleDelete = async (identityNumber: string) => {
+    if (confirm("Bu müşteri/kurumu silmek istediğinize emin misiniz?")) {
+      await removeCustomer(identityNumber);
     }
   };
 
-  const handleUpdate = async (tcNo: string, updatedData: { fullName: string; email: string }) => {
-    const success = await editCustomer(tcNo, updatedData);
+  const handleUpdate = async (identityNumber: string, updatedData: { profileName: string; email: string }) => {
+    const success = await editCustomer(identityNumber, updatedData);
     if (success) setIsEditModalOpen(false);
   };
 
@@ -36,8 +37,8 @@ export default function CustomerListPage() {
     <div className="space-y-6">
       
       <PageHeader 
-        title="Müşteri Yönetimi" 
-        description="Sistemdeki tüm müşterileri görüntüle, onayla ve yönet."
+        title="Müşteri ve Kurum Yönetimi" 
+        description="Sistemdeki tüm bireysel ve kurumsal hesapları görüntüle, onayla ve yönet."
         action={<Button onClick={fetchCustomers} variant="outline" size="sm">Listeyi Yenile</Button>}
       />
 
@@ -54,8 +55,8 @@ export default function CustomerListPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ad Soyad</TableHead>
-                  <TableHead>TC Kimlik No</TableHead>
+                  <TableHead>Ad Soyad / Ünvan</TableHead>
+                  <TableHead>Kimlik / Vergi No</TableHead>
                   <TableHead>E-posta</TableHead>
                   <TableHead>Durum</TableHead>
                   <TableHead className="text-right">İşlemler</TableHead>
@@ -70,19 +71,21 @@ export default function CustomerListPage() {
                   </TableRow>
                 ) : (
                   customers.map((customer) => {
-                    const isMe = customer.tcNo === user?.tcNo;
+                    // 🚀 V2: Kimlik kontrolü
+                    const isMe = customer.identityNumber === user?.identityNumber;
 
                     return (
-                      <TableRow key={customer.tcNo}>
+                      <TableRow key={customer.identityNumber}>
                         <TableCell className="font-medium">
-                          {customer.fullName}{" "}
+                          {/* 🚀 V2: profileName */}
+                          {customer.profileName}{" "}
                           {isMe && (
                             <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded ml-2">
                               (Sen)
                             </span>
                           )}
                         </TableCell>
-                        <TableCell>{customer.tcNo}</TableCell>
+                        <TableCell>{customer.identityNumber}</TableCell>
                         <TableCell>{customer.email}</TableCell>
 
                         <TableCell>
@@ -99,59 +102,50 @@ export default function CustomerListPage() {
 
                         <TableCell className="text-right space-x-2">
                           
-                          {/* ONAYLA BUTONU (Beklemede veya Reddedilmişse çıkar) */}
                           {(customer.status === "PENDING" || customer.status === "REJECTED") && !isMe && (
                             <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => updateCustomerStatus && updateCustomerStatus(customer.tcNo, 'APPROVED')}
-                              title="Müşteriyi Onayla"
+                              size="sm" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => updateCustomerStatus && updateCustomerStatus(customer.identityNumber, 'APPROVED')}
+                              title="Onayla"
                             >
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
                           )}
 
-                          {/* REDDET BUTONU (Beklemede veya Onaylıysa çıkar) */}
                           {(customer.status === "PENDING" || customer.status === "APPROVED") && !isMe && (
                             <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => updateCustomerStatus && updateCustomerStatus(customer.tcNo, 'REJECTED')}
-                              title="Müşteriyi Reddet / Askıya Al"
+                              size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => updateCustomerStatus && updateCustomerStatus(customer.identityNumber, 'REJECTED')}
+                              title="Reddet / Askıya Al"
                             >
                               <XCircle className="h-4 w-4" />
                             </Button>
                           )}
 
-                          <Link href={`/admin/customers/${customer.tcNo}/accounts`}>
+                          {/* 🚀 V2: Dinamik link güncellendi */}
+                          <Link href={`/admin/customers/${customer.identityNumber}/accounts`}>
                             <Button variant="ghost" size="sm" className="text-blue-600 cursor-pointer" title="Hesapları Gör">
                               <UserSearch className="h-4 w-4" />
                             </Button>
                           </Link>
 
                           <Button
-                            variant="ghost"
-                            size="sm"
+                            variant="ghost" size="sm"
                             className={`text-orange-600 ${isMe ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-orange-50"}`}
                             onClick={() => {
                               setEditingCustomer(customer);
                               setIsEditModalOpen(true);
                             }}
                             disabled={isMe}
-                            title={isMe ? "Kendi profilinizi 'Ayarlar' menüsünden düzenleyin" : "Müşteriyi Düzenle"}
                           >
                             <Settings className="h-4 w-4" />
                           </Button>
 
                           <Button
-                            variant="ghost"
-                            size="sm"
+                            variant="ghost" size="sm"
                             className={`text-red-600 ${isMe ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-red-50"}`}
-                            onClick={() => handleDelete(customer.tcNo)}
+                            onClick={() => handleDelete(customer.identityNumber)}
                             disabled={isMe}
-                            title={isMe ? "Kendi hesabınızı silemezsiniz" : "Müşteriyi Sil"}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

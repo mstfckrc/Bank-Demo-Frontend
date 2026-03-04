@@ -1,4 +1,3 @@
-// components/admin/modals/EditCustomerModal.tsx
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,18 +9,19 @@ interface EditCustomerModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   customer: any; 
-  onUpdate: (tcNo: string, updatedData: { fullName: string; email: string }) => Promise<void>;
+  // 🚀 V2: tcNo ve fullName yerini identityNumber ve profileName aldı
+  onUpdate: (identityNumber: string, updatedData: { profileName: string; email: string }) => Promise<void>;
 }
 
 export function EditCustomerModal({ isOpen, onOpenChange, customer, onUpdate }: EditCustomerModalProps) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ fullName: "", email: "" });
+  // 🚀 V2: fullName -> profileName
+  const [formData, setFormData] = useState({ profileName: "", email: "" });
 
-  // Modal açıldığında form verilerini doldur
   useEffect(() => {
     if (customer) {
       setFormData({
-        fullName: customer.fullName || "",
+        profileName: customer.profileName || "",
         email: customer.email || "",
       });
     }
@@ -33,11 +33,11 @@ export function EditCustomerModal({ isOpen, onOpenChange, customer, onUpdate }: 
 
     try {
       setLoading(true);
-      // 🚀 Backend tcNo beklediği için customer.tcNo gönderiyoruz
-      await onUpdate(customer.tcNo, formData);
-      onOpenChange(false); // Sadece BAŞARILI olursa modalı kapat
+      // 🚀 V2: customer.tcNo yerine customer.identityNumber fırlatıyoruz
+      await onUpdate(customer.identityNumber, formData);
+      onOpenChange(false); 
     } catch (error) {
-      // Hata olursa modal kapanmaz, kullanıcı tekrar deneyebilir
+      // Hata olursa modal kapanmaz
     } finally {
       setLoading(false);
     }
@@ -45,20 +45,22 @@ export function EditCustomerModal({ isOpen, onOpenChange, customer, onUpdate }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-106.25">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Müşteri Profilini Düzenle</DialogTitle>
           <DialogDescription>
-            {customer?.tcNo} TCKN'li müşterinin bilgilerini güncelliyorsunuz.
+            {/* 🚀 V2: identityNumber gösterimi */}
+            {customer?.identityNumber} kimlik/vergi numaralı müşterinin bilgilerini güncelliyorsunuz.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label>Ad Soyad</Label>
+            <Label>Ad Soyad / Şirket Ünvanı</Label>
+            {/* 🚀 V2: profileName inputu */}
             <Input 
-              value={formData.fullName} 
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})} 
+              value={formData.profileName} 
+              onChange={(e) => setFormData({...formData, profileName: e.target.value})} 
               required
               disabled={loading}
             />

@@ -1,15 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, ShieldAlert } from "lucide-react"; // 🚀 ShieldAlert eklendi
+import { Settings, ShieldAlert } from "lucide-react"; 
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function AdminDashboardPage() {
@@ -17,33 +11,33 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Sistem Özeti"
-        description="Bankanın genel durumunu ve hızlı işlemleri buradan yönetebilirsiniz."
+        description="Bankanın genel durumunu ve kurumsal/bireysel tüm işlemleri buradan yönetebilirsiniz."
         showBackButton={false}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        {/* 1. Müşteri Yönetimi Kartı */}
+        {/* Müşteri Yönetimi Kartı */}
         <Card className="hover:border-slate-300 transition-colors flex flex-col h-full">
           <CardHeader className="flex-1">
-            <CardTitle>Müşteri Yönetimi</CardTitle>
+            <CardTitle>Müşteri ve Kurum Yönetimi</CardTitle>
             <CardDescription>
-              Sistemdeki tüm müşterileri görüntüle, düzenle veya sil. Onay bekleyen kullanıcıları yönet.
+              Sistemdeki tüm bireysel ve kurumsal müşterileri görüntüle, düzenle veya sil.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/admin/customers">
-              <Button className="w-full">Müşterileri Listele</Button>
+              <Button className="w-full">Hesapları Listele</Button>
             </Link>
           </CardContent>
         </Card>
 
-        {/* 2. Hesap Yönetimi Kartı */}
+        {/* Hesap Yönetimi Kartı */}
         <Card className="hover:border-slate-300 transition-colors flex flex-col h-full">
           <CardHeader className="flex-1">
-            <CardTitle>Banka Hesapları</CardTitle>
+            <CardTitle>Banka Hesapları (Vadesiz)</CardTitle>
             <CardDescription>
-              Bankada açılmış olan tüm hesapları ve güncel bakiyelerini detaylı olarak incele.
+              Açılmış olan tüm hesapları ve güncel bakiyelerini detaylı olarak incele.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -55,9 +49,8 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 🚀 3. YENİ: MERKEZİ İŞLEM İZLEME KARTI (GOD MODE) */}
+        {/* Merkezi İşlem İzleme Kartı (God Mode) */}
         <Card className="hover:border-amber-300 border-amber-200 bg-amber-50/30 transition-colors flex flex-col h-full relative overflow-hidden">
-          {/* Arka plan efekti */}
           <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
           
           <CardHeader className="flex-1">
@@ -66,7 +59,7 @@ export default function AdminDashboardPage() {
               <CardTitle className="text-amber-900">Merkezi İşlem İzleme</CardTitle>
             </div>
             <CardDescription className="text-amber-700/80">
-              Bankadaki tüm para akışını izleyin. 50.000 TL üzeri şüpheli veya yüklü işlemleri onaylayın/reddedin.
+              Tüm para akışını izleyin. MASAK kurallarına takılan şüpheli veya yüklü işlemleri onaylayın.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -78,7 +71,7 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 4. Profil ve Ayarlar Kartı */}
+        {/* Profil ve Ayarlar Kartı */}
         <Card className="hover:border-slate-300 transition-colors flex flex-col h-full">
           <CardHeader className="flex-1">
             <div className="flex items-center gap-2 mb-1">
@@ -98,12 +91,12 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 5. İstatistik Kartı (Görsel Zenginlik İçin En Sona Aldık) */}
+        {/* İstatistik Kartı */}
         <Card className="bg-slate-900 text-white border-none flex flex-col h-full lg:col-span-2">
           <CardHeader className="flex-1">
-            <CardTitle className="text-slate-100">Sistem Durumu</CardTitle>
+            <CardTitle className="text-slate-100">Sistem Durumu (V2)</CardTitle>
             <CardDescription className="text-slate-400">
-              Veritabanı, API bağlantıları ve Güvenlik Duvarı Statüsü
+              Veritabanı, AppUser Mimarisi ve Güvenlik Duvarı Statüsü
             </CardDescription>
           </CardHeader>
           <CardContent>

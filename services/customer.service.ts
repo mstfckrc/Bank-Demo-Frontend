@@ -1,8 +1,8 @@
 import api from '../lib/axios';
 
 export const customerService = {
-  // Kullanıcının kendi profilini güncellemesi
-  updateProfile: async (data: { fullName: string; email: string }) => {
+  // Kullanıcının kendi profilini güncellemesi (🚀 fullName -> profileName oldu)
+  updateProfile: async (data: { profileName: string; email: string }) => {
     const response = await api.put('/customers/profile', data);
     return response.data;
   },

@@ -1,4 +1,3 @@
-// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -19,8 +18,6 @@ export function proxy(request: NextRequest) {
   }
 
   // 2. Token Varsa: Rolü kontrol et
-  // middleware.ts içindeki try-catch kısmı:
-
   try {
     const payloadBase64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
     
@@ -31,20 +28,26 @@ export function proxy(request: NextRequest) {
     const decodedJson = atob(paddedBase64);
     const payload = JSON.parse(decodedJson);
     
-    const rawRole = payload.role || "USER";
-    const role = String(rawRole).includes("ADMIN") ? "ADMIN" : "USER";
+    // 🚀 V2 GÜNCELLEMESİ: Backend'den gelen yeni rolleri işliyoruz
+    const rawRole = String(payload.role || "");
+    const isAdmin = rawRole.includes("ADMIN");
+    // İleride ayırmak istersen diye buraya not düşüyoruz:
+    // const isCorporate = rawRole.includes("CORPORATE_MANAGER");
+    // const isRetail = rawRole.includes("RETAIL_CUSTOMER");
 
+    // Giriş/Kayıt sayfalarındayken zaten giriş yapılmışsa, yetkisine göre panele at
     if (isAuthRoute) {
-      const redirectUrl = role === 'ADMIN' ? '/admin/dashboard' : '/user/dashboard';
+      const redirectUrl = isAdmin ? '/admin/dashboard' : '/user/dashboard';
       return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
-    if (isAdminRoute && role !== 'ADMIN') {
+    // Admin sayfasına yetkisiz (Bireysel veya Kurumsal) girmeye çalışanı engelle
+    if (isAdminRoute && !isAdmin) {
       return NextResponse.redirect(new URL('/user/dashboard', request.url));
     }
 
   } catch (error) {
-    // Eğer token gerçekten bozuksa temizle ve at
+    // Eğer token gerçekten bozuksa temizle ve login'e at
     console.error("Middleware Token Çözme Hatası:", error);
     const response = NextResponse.redirect(new URL('/login', request.url));
     response.cookies.delete('token');

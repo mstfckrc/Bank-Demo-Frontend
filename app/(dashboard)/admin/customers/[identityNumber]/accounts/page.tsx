@@ -7,10 +7,9 @@ import { accountService } from "@/services/account.service";
 import { AccountResponse } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Landmark, Plus } from "lucide-react";
+import { Loader2, Landmark, Plus } from "lucide-react";
 import { toast } from "sonner"; 
 
-// Bileşenleri İçe Aktar
 import { AdminTransactionHistoryModal } from "@/components/admin/modals/AdminTransactionHistoryModal";
 import { OpenAccountModal } from "@/components/admin/modals/OpenAccountModal";
 import { CloseAccountModal } from "@/components/admin/modals/CloseAccountModal";
@@ -18,14 +17,13 @@ import { AccountTable } from "@/components/admin/tables/AccountTable";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function CustomerAccountsPage() {
-  const router = useRouter();
   const params = useParams();
-  const tcNo = params.tcNo as string;
+  // 🚀 V2: Klasör adını değiştirdiğimiz için artık URL'den identityNumber okuyoruz
+  const identityNumber = params.identityNumber as string;
 
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal State'leri
   const [isOpenAccountModalOpen, setIsOpenAccountModalOpen] = useState(false);
   
   const [accountToClose, setAccountToClose] = useState<string | null>(null);
@@ -36,16 +34,16 @@ export default function CustomerAccountsPage() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   useEffect(() => {
-    if (tcNo) fetchAccounts();
-  }, [tcNo]);
+    if (identityNumber) fetchAccounts();
+  }, [identityNumber]);
 
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const data = await adminService.getCustomerAccounts(tcNo); 
+      const data = await adminService.getCustomerAccounts(identityNumber); 
       setAccounts(data);
     } catch (error) {
-      toast.error("Hata", { description: "Müşteri hesapları getirilemedi." });
+      toast.error("Hata", { description: "Müşteri/Kurum hesapları getirilemedi." });
     } finally {
       setLoading(false);
     }
@@ -61,7 +59,7 @@ export default function CustomerAccountsPage() {
       
       setAccounts((prevAccounts) =>
         prevAccounts.map((acc) =>
-          acc.accountNumber === accountToClose ? { ...acc, isActive: false, active: false } : acc
+          acc.accountNumber === accountToClose ? { ...acc, isActive: false } : acc
         )
       );
       setAccountToClose(null); 
@@ -74,14 +72,13 @@ export default function CustomerAccountsPage() {
 
   return (
     <div className="space-y-6 relative">
-      {/* 🚀 ÜST BAŞLIK ALANI */}
       <PageHeader 
-        title="Müşteri Hesapları" 
-        description={`TC: ${tcNo} numaralı müşterinin tüm varlıkları.`}
+        title="Müşteri/Kurum Hesapları" 
+        // 🚀 V2: Dinamik başlık
+        description={`Kimlik/Vergi No: ${identityNumber} olan müşterinin tüm varlıkları.`}
         action={<Button onClick={fetchAccounts} variant="secondary" size="sm">Listeyi Yenile</Button>}
       />
 
-      {/* 🚀 ANA TABLO KARTI */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50 pb-4">
           <CardTitle className="flex items-center gap-2 text-slate-700">
@@ -102,7 +99,6 @@ export default function CustomerAccountsPage() {
           {loading ? (
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-slate-500" /></div>
           ) : (
-            // 🚀 TABLO BİLEŞENİNİ BURADA ÇAĞIRIYORUZ
             <AccountTable 
               accounts={accounts}
               onOpenHistory={(accountNo, accountId) => {
@@ -116,7 +112,6 @@ export default function CustomerAccountsPage() {
         </CardContent>
       </Card>
 
-      {/* 🚀 MODALLAR YIĞINI */}
       <AdminTransactionHistoryModal
         isOpen={isHistoryOpen}
         onOpenChange={setIsHistoryOpen}
@@ -127,7 +122,7 @@ export default function CustomerAccountsPage() {
       <OpenAccountModal
         isOpen={isOpenAccountModalOpen}
         onOpenChange={setIsOpenAccountModalOpen}
-        tcNo={tcNo}
+        identityNumber={identityNumber} // 🚀 V2: Modal'a tcNo yerine identityNumber gönderiliyor
         onSuccess={(newAccount) => setAccounts((prev) => [...prev, newAccount])}
       />
 
