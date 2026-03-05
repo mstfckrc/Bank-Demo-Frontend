@@ -17,10 +17,16 @@ export function useAccounts(identityNumber?: string) {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
+      
+      // 🚀 DÜZELTME: Eğer kimlik numarası yoksa, admin rotasına değil,
+      // müşterinin kendi hesaplarını getiren (getMyAccounts) rotaya git!
       const data = identityNumber 
         ? await adminService.getCustomerAccounts(identityNumber) 
-        : await accountService.getAllAccounts();
+        : await accountService.getMyAccounts(); // <-- HAYAT KURTARAN DOKUNUŞ
+        
       setAccounts(data);
+    } catch (error) {
+      console.error("Hesaplar çekilirken hata oluştu:", error);
     } finally {
       setLoading(false);
     }

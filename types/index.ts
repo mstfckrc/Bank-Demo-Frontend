@@ -114,3 +114,25 @@ export interface ExchangeRateResponse {
     [key: string]: number; 
   };
 }
+
+// --- KURUMSAL PERSONEL YÖNETİMİ TİPLERİ ---
+
+export interface CompanyEmployeeResponse {
+  id: number;
+  identityNumber: string;
+  firstName: string;
+  lastName: string;
+  salaryIban: string;
+  salaryAmount: number;
+}
+
+export interface HireEmployeeRequest {
+  identityNumber: string;
+  salaryIban: string;
+  salaryAmount: number;
+}
+
+export interface UpdateEmployeeRequest {
+  salaryIban: string;
+  salaryAmount: number;
+}

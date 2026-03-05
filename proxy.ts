@@ -8,10 +8,11 @@ export function proxy(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
   const isAdminRoute = pathname.startsWith('/admin');
   const isUserRoute = pathname.startsWith('/user') || pathname.startsWith('/dashboard');
+  const isCompanyRoute = pathname.startsWith('/company'); // 🚀 YENİ: Kurumsal rota tanımı
 
   // 1. Token Yoksa: Korumalı alanlara girişi engelle
   if (!token) {
-    if (isAdminRoute || isUserRoute) {
+    if (isAdminRoute || isUserRoute || isCompanyRoute) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
     return NextResponse.next();
@@ -20,34 +21,44 @@ export function proxy(request: NextRequest) {
   // 2. Token Varsa: Rolü kontrol et
   try {
     const payloadBase64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    
-    // 🚀 ÇÖZÜM: Eksik '=' işaretlerini tamamlayarak atob() hatasını (çökmeyi) önlüyoruz
     const pad = payloadBase64.length % 4;
     const paddedBase64 = pad > 0 ? payloadBase64 + '='.repeat(4 - pad) : payloadBase64;
     
     const decodedJson = atob(paddedBase64);
     const payload = JSON.parse(decodedJson);
     
-    // 🚀 V2 GÜNCELLEMESİ: Backend'den gelen yeni rolleri işliyoruz
     const rawRole = String(payload.role || "");
     const isAdmin = rawRole.includes("ADMIN");
-    // İleride ayırmak istersen diye buraya not düşüyoruz:
-    // const isCorporate = rawRole.includes("CORPORATE_MANAGER");
-    // const isRetail = rawRole.includes("RETAIL_CUSTOMER");
+    const isCorporate = rawRole.includes("CORPORATE_MANAGER"); // 🚀 YENİ: Kurumsal rolü tanı
 
-    // Giriş/Kayıt sayfalarındayken zaten giriş yapılmışsa, yetkisine göre panele at
+    // Giriş/Kayıt sayfalarındayken zaten giriş yapılmışsa, yetkisine göre doğru panele at
     if (isAuthRoute) {
-      const redirectUrl = isAdmin ? '/admin/dashboard' : '/user/dashboard';
+      let redirectUrl = '/user/dashboard'; // Varsayılan Bireysel
+      if (isAdmin) redirectUrl = '/admin/dashboard';
+      if (isCorporate) redirectUrl = '/company/dashboard'; // 🚀 YENİ: Kurumsal yönlendirme
+      
       return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
-    // Admin sayfasına yetkisiz (Bireysel veya Kurumsal) girmeye çalışanı engelle
+    // --- YETKİ DUVARLARI ---
+
+    // Admin sayfasına sadece ADMIN girebilir
     if (isAdminRoute && !isAdmin) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    // Kurumsal sayfasına sadece CORPORATE_MANAGER girebilir
+    if (isCompanyRoute && !isCorporate) {
       return NextResponse.redirect(new URL('/user/dashboard', request.url));
     }
 
+    // Bireysel sayfasına ADMIN veya CORPORATE girerse onları kendi panellerine yolla
+    if (isUserRoute) {
+       if (isAdmin) return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+       if (isCorporate) return NextResponse.redirect(new URL('/company/dashboard', request.url));
+    }
+
   } catch (error) {
-    // Eğer token gerçekten bozuksa temizle ve login'e at
     console.error("Middleware Token Çözme Hatası:", error);
     const response = NextResponse.redirect(new URL('/login', request.url));
     response.cookies.delete('token');
@@ -57,6 +68,14 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+// 🚀 KRİTİK GÜNCELLEME: Matcher listesine /company eklendi
 export const config = {
-  matcher: ['/login', '/register', '/admin/:path*', '/user/:path*', '/dashboard/:path*'],
+  matcher: [
+    '/login', 
+    '/register', 
+    '/admin/:path*', 
+    '/user/:path*', 
+    '/dashboard/:path*', 
+    '/company/:path*' // <-- Burası eklendi!
+  ],
 };

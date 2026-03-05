@@ -35,10 +35,14 @@ export default function LoginPage() {
       
       login(userProfile, token);
       
-      // Admin ise admin paneline, değilse müşteri (Bireysel/Kurumsal) paneline
+      // Admin ise admin paneline, Kurumsal ise şirket paneline, Bireysel ise müşteri paneline
       if (userProfile.role.includes("ADMIN")) {
         router.push("/admin/dashboard");
+      } else if (userProfile.role.includes("CORPORATE_MANAGER")) {
+        // 🚀 V2: Kurumsal Yönetici Yönlendirmesi
+        router.push("/company/dashboard");
       } else {
+        // Geriye kalanlar (RETAIL_CUSTOMER - Bireysel)
         router.push("/user/dashboard");
       }
     } catch (err: any) {
