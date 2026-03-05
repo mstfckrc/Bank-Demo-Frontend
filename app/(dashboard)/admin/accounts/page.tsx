@@ -20,7 +20,9 @@ import { AdminTransactionHistoryModal } from "@/components/admin/modals/AdminTra
 import { CloseAccountModal } from "@/components/admin/modals/CloseAccountModal";
 
 export default function AllAccountsPage() {
-  const { accounts, loading, isProcessing, fetchAccounts, closeAccount } = useAccounts();
+  // 🚀 DÜZELTME: İlk parametre boş (undefined), ikinci parametre (fetchAll) TRUE!
+  // Böylece motor "Tüm Hesapları Getir" modunda çalışır.
+  const { accounts, loading, isProcessing, fetchAccounts, closeAccount } = useAccounts(undefined, true);
 
   const [accountToClose, setAccountToClose] = useState<string | null>(null);
   const [historyAccountNo, setHistoryAccountNo] = useState<string | null>(null);
@@ -81,7 +83,6 @@ export default function AllAccountsPage() {
                         className={`transition-colors ${isAccountActive ? "hover:bg-slate-50" : "bg-slate-50/50 opacity-60"}`}
                       >
                         <TableCell>
-                          {/* 🚀 V2: ownerName ve identityNumber kullanıyoruz */}
                           <div className="font-bold text-slate-900">{acc.ownerName || "Bilinmiyor"}</div>
                           <div className="text-[11px] text-slate-500 font-mono mt-0.5">ID: {acc.identityNumber || "-"}</div>
                         </TableCell>

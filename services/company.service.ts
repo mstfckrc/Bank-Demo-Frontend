@@ -2,6 +2,7 @@ import api from '../lib/axios';
 import { 
   CompanyEmployeeResponse, 
   HireEmployeeRequest, 
+  TransactionResponse, 
   UpdateEmployeeRequest 
 } from '../types';
 
@@ -35,6 +36,12 @@ export const companyService = {
   // 4. Personeli işten çıkarır
   removeEmployee: async (employeeIdentityNumber: string): Promise<{ message: string }> => {
     const response = await api.delete(`${BASE_URL}/${employeeIdentityNumber}`);
+    return response.data;
+  },
+
+  // 5. Şirket kasasından tüm personellere toplu maaş dağıtır
+  paySalaries: async (senderIban: string): Promise<TransactionResponse[]> => {
+    const response = await api.post(`${BASE_URL}/pay-salaries`, { senderIban });
     return response.data;
   }
   

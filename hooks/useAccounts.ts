@@ -5,28 +5,37 @@ import { AccountResponse } from "@/types";
 import { toast } from "sonner";
 
 // 🚀 V2: tcNo yerine identityNumber bekliyoruz
-export function useAccounts(identityNumber?: string) {
+// 🚀 YENİ: fetchAll adında bir admin anahtarı ekledik (Varsayılan: false)
+export function useAccounts(identityNumber?: string, fetchAll: boolean = false) {
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
-  }, [identityNumber]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [identityNumber, fetchAll]);
 
   const fetchAccounts = async () => {
     try {
       setLoading(true);
       
-      // 🚀 DÜZELTME: Eğer kimlik numarası yoksa, admin rotasına değil,
-      // müşterinin kendi hesaplarını getiren (getMyAccounts) rotaya git!
-      const data = identityNumber 
-        ? await adminService.getCustomerAccounts(identityNumber) 
-        : await accountService.getMyAccounts(); // <-- HAYAT KURTARAN DOKUNUŞ
-        
+      let data;
+      // 🚀 YÖNLENDİRME MERKEZİ
+      if (fetchAll) {
+        // 1. Admin "Tüm Hesaplar" sayfasındaysa: Bütün sistemi tara
+        data = await accountService.getAllAccounts();
+      } else if (identityNumber) {
+        // 2. Müşteri Detay sayfasındaysa: Sadece o müşteriyi getir
+        data = await adminService.getCustomerAccounts(identityNumber);
+      } else {
+        // 3. Şirket veya Birey kendi panelindeyse: Kendi hesaplarını getir
+        data = await accountService.getMyAccounts();
+      }
+      
       setAccounts(data);
     } catch (error) {
-      console.error("Hesaplar çekilirken hata oluştu:", error);
+      console.error("Hesaplar çekilirken hata:", error);
     } finally {
       setLoading(false);
     }
@@ -62,5 +71,28 @@ export function useAccounts(identityNumber?: string) {
     }
   };
 
-  return { accounts, loading, isProcessing, fetchAccounts, closeAccount, openAccount };
+ // 🚀 TİP DÜZELTİLDİ: Artık sadece geçerli para birimlerini kabul ediyor
+  const createMyAccount = async (currency: "TRY" | "USD" | "EUR") => {
+    try {
+      setIsProcessing(true);
+      
+      const newAccount = await accountService.createAccount({ currency });
+      
+      toast.success("Kasa Başarıyla Açıldı", { 
+        description: `${newAccount.iban} numaralı ${newAccount.currency} kasası oluşturuldu.` 
+      });
+      
+      setAccounts((prev) => [...prev, newAccount]);
+      
+      return true;
+    } catch (error) {
+      console.error("Kasa açılırken hata:", error);
+      toast.error("İşlem Başarısız", { description: "Kasa açılamadı. Lütfen tekrar deneyin." });
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return { accounts, loading, isProcessing, fetchAccounts, closeAccount, openAccount , createMyAccount };
 }

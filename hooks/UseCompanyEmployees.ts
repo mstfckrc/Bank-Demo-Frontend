@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { companyService } from '../services/company.service';
-import { CompanyEmployeeResponse, HireEmployeeRequest, UpdateEmployeeRequest } from '../types';
+import { CompanyEmployeeResponse, HireEmployeeRequest, TransactionResponse, UpdateEmployeeRequest } from '../types';
 
 export const useCompanyEmployees = () => {
   const [employees, setEmployees] = useState<CompanyEmployeeResponse[]>([]);
@@ -78,6 +78,22 @@ export const useCompanyEmployees = () => {
     }
   };
 
+  // 🚀 5. TOPLU MAAŞ DAĞITIMI MANTIĞI
+  const paySalaries = async (senderIban: string): Promise<TransactionResponse[] | null> => {
+    setIsProcessing(true);
+    setError(null);
+    try {
+      // Servise gidip tüm işlemi hallediyor ve bize dekont listesini dönüyor
+      const results = await companyService.paySalaries(senderIban);
+      return results; // Başarılıysa listeyi döndür (Modal'da fiş basmak için lazım olacak)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Maaş ödemesi sırasında bir hata oluştu.');
+      return null; // Başarısızsa null dön
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return {
     employees,
     loading,
@@ -87,5 +103,6 @@ export const useCompanyEmployees = () => {
     hireEmployee,
     updateEmployee,
     removeEmployee,
+    paySalaries,
   };
 };
