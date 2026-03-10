@@ -64,27 +64,30 @@ export default function EmployeeModal({ isOpen, onClose, selectedEmployee, onSav
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity">
+    // 🚀 DÜZELTME: Arka plan bg-black/60 yapıldı, mobil için p-4 eklendi.
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all">
         
-        <div className="flex justify-between items-center border-b pb-3 mb-4">
+        {/* BAŞLIK */}
+        <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
           <h3 className="text-xl font-bold text-gray-800">
             {isEditMode ? 'Personel Bilgilerini Güncelle' : 'Yeni Personel Ekle'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} disabled={isSubmitting} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
+        {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">TC Kimlik Numarası</label>
             <input
               type="text"
               required
-              disabled={isEditMode}
+              disabled={isEditMode || isSubmitting}
               value={identityNumber}
               onChange={(e) => setIdentityNumber(e.target.value)}
               placeholder="11 Haneli TC Kimlik"
@@ -98,6 +101,7 @@ export default function EmployeeModal({ isOpen, onClose, selectedEmployee, onSav
             <input
               type="text"
               required
+              disabled={isSubmitting}
               value={salaryIban}
               onChange={(e) => setSalaryIban(e.target.value)}
               placeholder="TR..."
@@ -110,6 +114,7 @@ export default function EmployeeModal({ isOpen, onClose, selectedEmployee, onSav
             <input
               type="number"
               required
+              disabled={isSubmitting}
               min="1"
               step="0.01"
               value={salaryAmount}
@@ -119,7 +124,7 @@ export default function EmployeeModal({ isOpen, onClose, selectedEmployee, onSav
             />
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100 mt-6">
             <button
               type="button"
               onClick={onClose}
@@ -133,7 +138,15 @@ export default function EmployeeModal({ isOpen, onClose, selectedEmployee, onSav
               disabled={isSubmitting}
               className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 flex items-center"
             >
-              {isSubmitting ? 'İşleniyor...' : isEditMode ? 'Güncelle' : 'Personeli Ekle'}
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  İşleniyor...
+                </>
+              ) : isEditMode ? 'Güncelle' : 'Personeli Ekle'}
             </button>
           </div>
         </form>

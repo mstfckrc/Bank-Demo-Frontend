@@ -9,19 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Loader2, ShieldCheck, User, Building2 } from "lucide-react";
+import { AlertCircle, Loader2, ShieldCheck, User, Building2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
   
-  // 🚀 V2: Kayıt türünü belirleyen state (Bireysel / Kurumsal)
   const [accountType, setAccountType] = useState<"RETAIL" | "CORPORATE">("RETAIL");
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🚀 V2: Tüm ihtimalleri barındıran devasa form state'imiz
   const [formData, setFormData] = useState({
     identityNumber: "",
     email: "",
@@ -42,7 +40,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 🚀 V2: Seçilen sekmeye göre rolü ve gönderilecek veriyi filtreliyoruz
       const role: Role = accountType === "RETAIL" ? "RETAIL_CUSTOMER" : "CORPORATE_MANAGER";
       
       const payload = {
@@ -69,7 +66,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 py-12">
+      
+      <div className="w-full max-w-lg mb-4">
+        <Link href="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Ana Menüye Dön
+        </Link>
+      </div>
+
       <Card className="w-full max-w-lg border-none shadow-2xl">
         <CardHeader className="space-y-3 pb-6 border-b border-slate-100 bg-white rounded-t-xl">
           <div className="flex justify-center mb-2">
@@ -84,12 +89,12 @@ export default function RegisterPage() {
         </CardHeader>
         
         <CardContent className="pt-6 bg-white">
-          {/* 🚀 V2: Bireysel / Kurumsal Sekme Yapısı */}
+          {/* 🚀 DÜZELTME: variant="ghost" ile shadcn default kararma efekti kaldırıldı */}
           <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-lg mb-6">
             <Button
               type="button"
-              variant={accountType === "RETAIL" ? "default" : "ghost"}
-              className={`h-10 ${accountType === "RETAIL" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              variant="ghost"
+              className={`h-10 transition-all ${accountType === "RETAIL" ? "bg-white text-slate-900 shadow-sm hover:bg-white hover:text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
               onClick={() => {
                 setAccountType("RETAIL");
                 setError("");
@@ -100,8 +105,8 @@ export default function RegisterPage() {
             </Button>
             <Button
               type="button"
-              variant={accountType === "CORPORATE" ? "default" : "ghost"}
-              className={`h-10 ${accountType === "CORPORATE" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              variant="ghost"
+              className={`h-10 transition-all ${accountType === "CORPORATE" ? "bg-white text-slate-900 shadow-sm hover:bg-white hover:text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
               onClick={() => {
                 setAccountType("CORPORATE");
                 setError("");
@@ -126,11 +131,13 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-slate-700 font-bold">Ad</Label>
-                    <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleInputChange} required disabled={loading} className="bg-slate-50" />
+                    {/* 🚀 DÜZELTME: Placeholder eklendi */}
+                    <Input id="firstName" name="firstName" placeholder="Örn: Ahmet" value={formData.firstName} onChange={handleInputChange} required disabled={loading} className="bg-slate-50" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName" className="text-slate-700 font-bold">Soyad</Label>
-                    <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleInputChange} required disabled={loading} className="bg-slate-50" />
+                    {/* 🚀 DÜZELTME: Placeholder eklendi */}
+                    <Input id="lastName" name="lastName" placeholder="Örn: Yılmaz" value={formData.lastName} onChange={handleInputChange} required disabled={loading} className="bg-slate-50" />
                   </div>
                 </div>
                 <div className="space-y-2">

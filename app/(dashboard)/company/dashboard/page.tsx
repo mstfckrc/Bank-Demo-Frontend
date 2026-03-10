@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; // 🚀 YENİ İMPORT (Yönlendirme için)
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCompanyEmployees } from "@/hooks/useCompanyEmployees";
 import { useAccounts } from "@/hooks/useAccounts";
+import { companyService } from "@/services/company.service"; // 🚀 YENİ SERVİS
+
+// Modallar
 import EmployeeModal from "@/components/company/modals/EmployeeModal";
 import CorporateVaultModal from "@/components/company/modals/CorporateVaultModal";
 import CorporateDepositModal from "@/components/company/modals/CorporateDepositModal";
@@ -12,16 +15,20 @@ import CorporateHistoryModal from "@/components/company/modals/CorporateHistoryM
 import CorporateTransferModal from "@/components/company/modals/CorporateTransferModal";
 import CorporateCloseAccountModal from "@/components/company/modals/CorporateCloseAccountModal";
 import CorporatePaySalariesModal from "@/components/company/modals/CorporatePaySalariesModal";
+import CorporateAutoPaymentModal from "@/components/company/modals/CorporateAutoPaymentModal"; // 🚀 YENİ MODAL
+
+// Tipler ve İkonlar
 import {
   CompanyEmployeeResponse,
   HireEmployeeRequest,
   UpdateEmployeeRequest,
+  AutoPaymentSettingsRequest, // 🚀 YENİ TİP
 } from "@/types";
-import { Trash2, Globe, Settings } from "lucide-react"; // 🚀 YENİ İKONLAR EKLENDİ
+import { Trash2, Globe, Settings, CalendarClock } from "lucide-react"; // 🚀 YENİ İKON EKLENDİ
 import { toast } from "sonner";
 
 export default function CompanyDashboardPage() {
-  const router = useRouter(); // 🚀 YÖNLENDİRİCİ MOTORU ATEŞLENDİ
+  const router = useRouter();
   const { user } = useAuthStore();
 
   // Şirket Onay Durumu Kontrolleri
@@ -55,8 +62,12 @@ export default function CompanyDashboardPage() {
   const [selectedEmployee, setSelectedEmployee] =
     useState<CompanyEmployeeResponse | null>(null);
   const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
-  // 🚀 YENİ STATE: Maaş Dağıtım Modalı
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
+
+  // 🚀 YENİ: Otomatik Ödeme Modal State'leri
+  const [isAutoPaymentModalOpen, setIsAutoPaymentModalOpen] = useState(false);
+  const [isAutoPaymentSaving, setIsAutoPaymentSaving] = useState(false);
+  const [autoPaymentSettings, setAutoPaymentSettings] = useState<any>(null); // 🚀 YENİ: Veritabanından gelen ayarları tutacağımız state
 
   const [depositAccount, setDepositAccount] = useState<{
     accountNumber: string;
@@ -125,17 +136,45 @@ export default function CompanyDashboardPage() {
     }
   };
 
-  // 🚀 YENİ İŞLEM: Maaş Dağıtımı
   const handlePaySalaries = async (senderIban: string) => {
     const results = await paySalaries(senderIban);
     if (results) {
-      // null dönmediyse başarılıdır
       toast.success("Maaşlar Başarıyla Dağıtıldı!", {
         description: `${results.length} personelin hesabına transfer talimatı gönderildi.`,
       });
-      setIsSalaryModalOpen(false); // Modalı kapat
-      fetchAccounts(); // Kasadaki bakiyeyi güncellemek için hesapları tekrar çek
+      setIsSalaryModalOpen(false);
+      fetchAccounts();
     }
+  };
+
+  // 🚀 YENİ İŞLEM: Otomatik Ödeme Ayarlarını Kaydetme
+  const handleSaveAutoPayment = async (data: AutoPaymentSettingsRequest) => {
+    setIsAutoPaymentSaving(true);
+    try {
+      const response = await companyService.updateAutoPaymentSettings(data);
+      toast.success("Ayarlar Kaydedildi!", { description: response.message });
+      return true;
+    } catch (err: any) {
+      toast.error("Hata", {
+        description: err.response?.data?.message || "Ayarlar kaydedilemedi.",
+      });
+      return false;
+    } finally {
+      setIsAutoPaymentSaving(false);
+    }
+  };
+
+  // 🚀 YENİ: Modalı açmadan önce veritabanından mevcut ayarları çek
+  const handleOpenAutoPaymentModal = async () => {
+    try {
+      // Not: Eğer companyService içinde getAutoPaymentSettings yoksa, backend'e GET atan ufak bir metot eklemelisin.
+      const currentSettings = await companyService.getAutoPaymentSettings();
+      setAutoPaymentSettings(currentSettings);
+    } catch (err) {
+      console.log("Mevcut ayarlar çekilemedi veya henüz ayar yapılmamış.");
+      setAutoPaymentSettings(null); // Hata verirse (veya ayar yoksa) boş açsın
+    }
+    setIsAutoPaymentModalOpen(true);
   };
 
   // --- ARAYÜZ (UI) RENDER ALANI ---
@@ -224,10 +263,10 @@ export default function CompanyDashboardPage() {
         </div>
       )}
 
-      {/* 🚀 YENİ: HIZLI İŞLEMLER MENÜSÜ */}
+      {/* HIZLI İŞLEMLER MENÜSÜ */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <button
-          onClick={() => router.push("/currencies")} // Tıpkı User dashboard'daki gibi Piyasa'ya gider
+          onClick={() => router.push("/currencies")}
           className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all flex flex-col items-center justify-center gap-3 group"
         >
           <div className="bg-purple-50 p-3 rounded-full text-purple-600 group-hover:bg-purple-100 transition-colors">
@@ -237,7 +276,7 @@ export default function CompanyDashboardPage() {
         </button>
 
         <button
-          onClick={() => router.push("/company/settings")} // Kurumsal ayarlar rotası
+          onClick={() => router.push("/company/settings")}
           className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all flex flex-col items-center justify-center gap-3 group"
         >
           <div className="bg-orange-50 p-3 rounded-full text-orange-600 group-hover:bg-orange-100 transition-colors">
@@ -438,43 +477,52 @@ export default function CompanyDashboardPage() {
 
       {/* TABLO BÖLÜMÜ */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Maaş Bordrosu & Çalışanlar
-            </h2>
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-wrap gap-4">
+          <h2 className="text-lg font-semibold text-gray-700">
+            Maaş Bordrosu & Çalışanlar
+          </h2>
 
-            {/* 🚀 İKİ BUTON YAN YANA GELDİ */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsSalaryModalOpen(true)}
-                disabled={!isApproved || employees.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          {/* 🚀 ÜÇ BUTON YAN YANA GELDİ */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={handleOpenAutoPaymentModal}
+              disabled={!isApproved}
+              className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <CalendarClock className="w-4 h-4" />
+              Otomatik Talimat
+            </button>
+
+            <button
+              onClick={() => setIsSalaryModalOpen(true)}
+              disabled={!isApproved || employees.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Maaşları Dağıt
-              </button>
-              <button
-                onClick={handleAddNewEmployee}
-                disabled={!isApproved || empProcessing}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                + Yeni Personel
-              </button>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Maaşları Dağıt
+            </button>
+
+            <button
+              onClick={handleAddNewEmployee}
+              disabled={!isApproved || empProcessing}
+              className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Yeni Personel
+            </button>
           </div>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -583,7 +631,6 @@ export default function CompanyDashboardPage() {
         onCancel={() => setAccountToClose(null)}
         onConfirm={handleCloseAccountConfirm}
       />
-      {/* 🚀 YENİ: MAAŞ DAĞITIM MODALI */}
       <CorporatePaySalariesModal
         isOpen={isSalaryModalOpen}
         onClose={() => setIsSalaryModalOpen(false)}
@@ -591,6 +638,15 @@ export default function CompanyDashboardPage() {
         employees={employees}
         onConfirm={handlePaySalaries}
         isProcessing={empProcessing}
+      />
+      {/* 🚀 YENİ: OTOMATİK ÖDEME MODALI EKLENDİ */}
+      <CorporateAutoPaymentModal
+        isOpen={isAutoPaymentModalOpen}
+        onClose={() => setIsAutoPaymentModalOpen(false)}
+        accounts={accounts}
+        onConfirm={handleSaveAutoPayment}
+        isProcessing={isAutoPaymentSaving}
+        initialData={autoPaymentSettings} // 🚀 İŞTE BEYİN BURASI!
       />
     </div>
   );

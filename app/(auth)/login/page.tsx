@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,7 +53,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+      
+      {/* 🚀 YENİ: Ana Menüye Dön Butonu */}
+      <div className="w-full max-w-md mb-4">
+        <Link href="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Ana Menüye Dön
+        </Link>
+      </div>
+
       <Card className="w-full max-w-md border-none shadow-2xl">
         <CardHeader className="space-y-3 pb-6 border-b border-slate-100 bg-white rounded-t-xl">
           <div className="flex justify-center mb-2">

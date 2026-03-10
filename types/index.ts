@@ -136,3 +136,37 @@ export interface UpdateEmployeeRequest {
   salaryIban: string;
   salaryAmount: number;
 }
+
+export interface AutoPaymentSettingsRequest {
+  autoPaymentEnabled: boolean;
+  paymentDay: number | null;
+  defaultSalaryIban: string;
+}
+
+export interface AutoPaymentSettingsResponse {
+  autoPaymentEnabled: boolean;
+  paymentDay: number;
+  defaultSalaryIban: string;
+  message: string;
+}
+
+// --- FATURA (BILL) MODELLERİ ---
+export type BillType = 'ELECTRICITY' | 'WATER' | 'INTERNET' | 'GAS';
+
+export interface BillInstructionRequest {
+  accountId: number;
+  billType: BillType;
+  subscriberNo: string;
+  paymentDay: number;
+}
+
+export interface BillInstructionResponse {
+  id: number;
+  accountNumber: string;
+  iban: string;
+  billType: BillType;
+  subscriberNo: string;
+  paymentDay: number;
+  lastPaymentDate: string | null;
+  isActive: boolean;
+}

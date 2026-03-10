@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,13 @@ import {
   AlertTriangle, 
   XOctagon, 
   RefreshCw,
-  Wallet, 
+  Wallet,
+  Receipt,
+  Trash2,
+  Droplets,
+  Zap,
+  Wifi,
+  Flame, 
 } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -24,11 +30,14 @@ import { useUserDashboard } from "@/hooks/useUserDashboard";
 import { BalanceCard } from "@/components/dashboard/balance-card";
 import { AccountCard } from "@/components/dashboard/account-card";
 import { TransactionTable } from "@/components/dashboard/transaction-table";
+import { BillInstructionRequest } from "@/types";
 
 import { DepositModal } from "@/components/dashboard/modals/DepositModal";
 import { TransferModal } from "@/components/dashboard/modals/TransferModal";
 import { CreateAccountModal } from "@/components/dashboard/modals/CreateAccountModal";
 import { CloseAccountModal } from "@/components/dashboard/modals/CloseAccountModal";
+import { useBills } from "@/hooks/useBills";
+import { CreateBillInstructionModal } from "@/components/dashboard/modals/CreateBillInstructionModal";
 
 export default function UserDashboardPage() {
   const router = useRouter();
@@ -53,6 +62,9 @@ export default function UserDashboardPage() {
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
   const [accountToClose, setAccountToClose] = useState<string | null>(null);
+  // Fatura Hook'u ve State'i
+  const { instructions, fetchInstructions, createInstruction, deleteInstruction, isProcessing: billProcessing } = useBills();
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false);
 
   const [accountFilter, setAccountFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ACTIVE');
 
@@ -72,6 +84,19 @@ export default function UserDashboardPage() {
     return true; 
   });
 
+  const billTypeTrMap: Record<string, string> = {
+  ELECTRICITY: 'ELEKTRİK',
+  WATER: 'SU',
+  INTERNET: 'İNTERNET',
+  GAS: 'DOĞALGAZ'
+};
+
+
+  // Sayfa yüklendiğinde talimatları çek
+  useEffect(() => {
+    fetchInstructions();
+  }, [fetchInstructions]);
+  
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-0">
       <PageHeader
@@ -138,7 +163,16 @@ export default function UserDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
-            
+            {/* YENİ FATURA BUTONU */}
+            <Button
+              variant="outline"
+              disabled={isRestricted}
+              className={`h-24 flex flex-col gap-2 group ${isRestricted ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'border-indigo-100 hover:bg-indigo-50'}`}
+              onClick={() => setIsBillModalOpen(true)}
+            >
+              <Receipt className={`w-6 h-6 ${isRestricted ? 'text-slate-400' : 'text-indigo-600 group-hover:scale-110 transition-transform'}`} />
+              <span className="text-[11px] font-bold text-slate-700">Fatura Öde</span>
+            </Button>
             <Button
               variant="outline"
               className="h-24 flex flex-col gap-2 border-purple-100 hover:bg-purple-50 group"
@@ -263,6 +297,53 @@ export default function UserDashboardPage() {
         )}
       </div>
 
+      {/* FATURA TALİMATLARIM KARTI */}
+      {instructions.length > 0 && (
+        <Card className="border-slate-200 shadow-sm overflow-hidden mb-6">
+          <CardHeader className="border-b bg-indigo-50/30 pb-3">
+            <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
+              <Receipt className="w-5 h-5 text-indigo-500" /> Aktif Fatura Talimatlarım
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-slate-100">
+              {instructions.map((inst) => (
+                <div key={inst.id} className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2 rounded-full ${inst.billType === 'ELECTRICITY' ? 'bg-yellow-100 text-yellow-600' : inst.billType === 'WATER' ? 'bg-blue-100 text-blue-600' : inst.billType === 'INTERNET' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
+                      {inst.billType === 'ELECTRICITY' ? <Zap className="w-5 h-5"/> : inst.billType === 'WATER' ? <Droplets className="w-5 h-5"/> : inst.billType === 'INTERNET' ? <Wifi className="w-5 h-5"/> : <Flame className="w-5 h-5"/>}
+                    </div>
+                    <div>
+                      {/* 🚀 ÇÖZÜM BURADA: İngilizce tipi Türkçe sözlükten geçirip yazdırıyoruz */}
+                      <p className="font-bold text-slate-800 text-sm">{billTypeTrMap[inst.billType]} FATURASI</p>
+                      <p className="text-xs text-slate-500">Abone No: {inst.subscriberNo} • Her ayın {inst.paymentDay}. günü</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs font-semibold text-slate-600">Bağlı Kasa</p>
+                      <p className="text-xs font-mono text-slate-400">{inst.accountNumber}</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (window.confirm("Bu ödeme talimatını iptal etmek istediğinize emin misiniz?")) {
+                          deleteInstruction(inst.id);
+                        }
+                      }}
+                      disabled={billProcessing}
+                      className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition-colors"
+                      title="Talimatı İptal Et"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-slate-200 shadow-sm overflow-hidden">
         <CardHeader className="border-b bg-slate-50/50">
           <CardTitle className="text-lg flex items-center justify-between">
@@ -327,6 +408,19 @@ export default function UserDashboardPage() {
             setAccountToClose(null);
         }}
         onCancel={() => setAccountToClose(null)}
+      />
+
+      <CreateBillInstructionModal
+        isOpen={isBillModalOpen}
+        onOpenChange={setIsBillModalOpen}
+        accounts={accounts}
+        onCreate={async (data) => {
+          // 🚀 ÇÖZÜM BURADA: Gelen verinin kesinlikle BillInstructionRequest yapısında olduğunu TypeScript'e garanti ediyoruz (as BillInstructionRequest)
+          if (await createInstruction(data as BillInstructionRequest)) {
+            setIsBillModalOpen(false);
+          }
+        }}
+        isProcessing={billProcessing}
       />
     </div>
   );
