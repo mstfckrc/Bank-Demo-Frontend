@@ -11,11 +11,6 @@ export function useAccounts(identityNumber?: string, fetchAll: boolean = false) 
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [identityNumber, fetchAll]);
-
   const fetchAccounts = async () => {
     try {
       setLoading(true);
