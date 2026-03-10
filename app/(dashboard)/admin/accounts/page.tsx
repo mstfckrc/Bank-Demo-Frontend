@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Building2, History, Trash2 } from "lucide-react";
@@ -34,6 +34,12 @@ export default function AllAccountsPage() {
     const success = await closeAccount(accountToClose);
     if (success) setAccountToClose(null); 
   };
+
+  // 🚀 DÜZELTME 2: Sayfa açılır açılmaz hesapları çekme emrini veriyoruz!
+  useEffect(() => {
+    fetchAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6 relative">
