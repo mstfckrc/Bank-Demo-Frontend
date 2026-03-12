@@ -1,24 +1,21 @@
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
 import Cookies from "js-cookie";
-import { Role, ApprovalStatus, UserProfileResponse } from "../types";
+import { Role, ApprovalStatus, UserProfileResponse } from "../types"; // Kendi yoluna göre ayarla
 
-// 🚀 V2: State'te tutacağımız kullanıcı modelimiz güncellendi
 export interface AuthUser {
-  identityNumber: string; // tcNo yerine artık identityNumber
-  profileName: string;    // fullName yerine artık profileName
+  identityNumber: string;
+  profileName: string;
   email: string;
-  role: Role;             // RETAIL_CUSTOMER, CORPORATE_MANAGER veya ADMIN
-  status: ApprovalStatus; 
+  role: Role;
+  status: ApprovalStatus;
 }
 
-// Zustand Depomuzun (Store) Arayüzü
 interface AuthState {
   user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
 
-  // Aksiyonlar
   login: (user: AuthUser, token: string) => void;
   logout: () => void;
   updateUser: (updatedFields: Partial<AuthUser>) => void;
@@ -28,25 +25,27 @@ export const useAuthStore = create<AuthState>()(
   devtools(
     persist(
       (set) => ({
-        // Başlangıç değerleri
         user: null,
         token: null,
         isAuthenticated: false,
 
         // 1. GİRİŞ YAPMA (LOGIN)
         login: (user, token) => {
-          // Middleware için cookie ayarı
           Cookies.set("token", token, {
-            expires: 1, // 1 gün
-            secure: true,
+            expires: 1,
+            // 🚀 DÜZELTME 1: Sadece Docker/Canlı ortamda HTTPS (secure) zorunlu olsun
+            secure: process.env.NODE_ENV === "production", 
             sameSite: "strict",
+            // 🚀 DÜZELTME 2: Çerezin projenin her rotasında okunabilmesi için kök dizin atadık
+            path: "/", 
           });
           set({ user, token, isAuthenticated: true });
         },
 
         // 2. ÇIKIŞ YAPMA (LOGOUT)
         logout: () => {
-          Cookies.remove("token");
+          // 🚀 DÜZELTME 3: Çerezi silerken de path belirtmek, kesin silinmesini garanti eder
+          Cookies.remove("token", { path: "/" }); 
           set({ user: null, token: null, isAuthenticated: false });
         },
 
@@ -57,7 +56,7 @@ export const useAuthStore = create<AuthState>()(
           })),
       }),
       {
-        name: "bank-auth-storage", // LocalStorage anahtarı değişmedi, ancak içindeki yapı değişti.
+        name: "bank-auth-storage",
       },
     ),
   ),

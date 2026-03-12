@@ -45,6 +45,7 @@ export default function LoginPage() {
         // Geriye kalanlar (RETAIL_CUSTOMER - Bireysel)
         router.push("/user/dashboard");
       }
+      router.refresh();
     } catch (err: any) {
       setError(err.response?.data?.message || "Giriş başarısız. Bilgilerinizi kontrol edin.");
     } finally {

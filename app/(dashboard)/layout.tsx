@@ -16,8 +16,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   const handleLogout = () => {
-    logout(); 
-    router.push("/login"); 
+    logout(); // 1. Zustand ve Çerezler (path: "/" ile) temizlendi
+    router.push("/login"); // 2. Rota Login'e yönlendirildi
+    router.refresh(); // 🚀 3. SİHİRLİ DOKUNUŞ: Next.js önbelleğini patlat ve Proxy'yi uyanmaya zorla!
   };
 
   if (!isClient) return null; 
